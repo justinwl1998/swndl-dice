@@ -3,11 +3,13 @@
 
     * figure out how to import gltf meshes into three.js
     * implement color changing function
+    * implement the different pages as per the mockups
 */
 
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const canvasEl = document.querySelector('#canvas');
 const darkMode = document.querySelector('#darkMode');
@@ -21,7 +23,7 @@ function toggleDarkMode() {
 darkMode.onclick = function() {
     toggleDarkMode();
 }
-
+const loader = new GLTFLoader();
 let renderer, scene, camera, diceMesh, physicsWorld;
 let controls;
 // initialize the geometry and materials to make the "dice"
@@ -62,22 +64,42 @@ function initScene() {
     
     controls = new TrackballControls( camera, renderer.domElement );
     controls.rotateSpeed = 5;
+
+    loader.load(
+        './js/dice_v3.gltf',
+        function ( gltf ) {
+            scene.add( gltf.scene );
+
+            gltf.animations;
+            gltf.scene;
+            gltf.scenes;
+            gltf.cameras;
+            gltf.asset;
+        },
+        function (xhr) {
+            console.log(( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+        },
+        function (err) {
+            console.log("An error occurred.");
+        }
+    );
     
+    /*
     scene.add(cube);
     scene.add(cube2);
     
     cube2.translateX(1.5);
     cube2.translateY(1);
-    
+    */
     camera.position.z = 3;
     camera.position.x = 3;
     camera.position.y = 2;
     
     // lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, .5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
-    const topLight = new THREE.PointLight(0xffffff, .5);
-    topLight.position.set(10, 15, 0);
+    const topLight = new THREE.PointLight(0xffffff, 1);
+    topLight.position.set(1, 2, 0);
     topLight.castShadow = true;
     topLight.shadow.mapSize.width = 2048;
     topLight.shadow.mapSize.height = 2048;
