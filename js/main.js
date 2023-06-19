@@ -30,8 +30,11 @@ let controls;
 let geometry = new THREE.BoxGeometry( 1, 1, 1 );
 let material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
 //let material2 = new THREE.MeshStandardMaterial( { color: 0x0000ff });
-let cube = new THREE.Mesh( geometry, material );
-let cube2 = new THREE.Mesh( geometry, material)
+//let cube = new THREE.Mesh( geometry, material );
+//let cube2 = new THREE.Mesh( geometry, material)
+
+const diceModel1 = new THREE.Object3D();
+const diceModel2 = new THREE.Object3D();
 
 initScene();
 
@@ -66,9 +69,14 @@ function initScene() {
     controls.rotateSpeed = 5;
 
     loader.load(
-        './js/dice_v3.gltf',
+        './js/dice_v5.gltf',
         function ( gltf ) {
-            scene.add( gltf.scene );
+            //let model = gltf.scene;
+            //let model2 = gltf.scene;
+            //scene.add( model );
+            //scene.add( model2 );
+            diceModel1.add(gltf.scene);
+            diceModel2.add(gltf.scene.clone());
 
             gltf.animations;
             gltf.scene;
@@ -84,6 +92,22 @@ function initScene() {
         }
     );
     
+    diceModel1.translateX(-1.5);
+    diceModel1.translateY(0.77);
+
+    diceModel1.rotateX(0.3523);
+    diceModel1.rotateY(1.241);
+    diceModel1.rotateZ(0.195);
+    scene.add(diceModel1);
+
+    diceModel2.translateX(1.2);
+    diceModel2.translateY(-1.3);
+    diceModel2.translateZ(-1.5);
+    diceModel2.rotateX(1.53);
+    diceModel2.rotateY(0.461);
+    diceModel2.rotateZ(2.871);
+    scene.add(diceModel2);
+
     /*
     scene.add(cube);
     scene.add(cube2);
@@ -96,10 +120,10 @@ function initScene() {
     camera.position.y = 2;
     
     // lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 8);
     scene.add(ambientLight);
-    const topLight = new THREE.PointLight(0xffffff, 1);
-    topLight.position.set(1, 2, 0);
+    const topLight = new THREE.PointLight(0xffffff, 8);
+    topLight.position.set(1, 1, 0);
     topLight.castShadow = true;
     topLight.shadow.mapSize.width = 2048;
     topLight.shadow.mapSize.height = 2048;
@@ -111,12 +135,13 @@ function initScene() {
 let animate = function() {
     requestAnimationFrame( animate );
 
-	cube.rotation.x += 0.01;
-	cube.rotation.y += 0.01;
-    cube.rotation.z += 0.01;
-    cube2.rotation.x += 0.01;
-    cube2.rotation.y += 0.01;
-    cube2.rotation.z += 0.01;
+    diceModel1.rotation.x += 0.01;
+    diceModel1.rotation.y += 0.01;
+    diceModel1.rotation.z += 0.01;
+
+    diceModel2.rotation.x -= 0.01;
+    diceModel2.rotation.y -= 0.01;
+    diceModel2.rotation.z -= 0.01;
 
     controls.update();
 
