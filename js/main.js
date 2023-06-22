@@ -5,7 +5,7 @@
     * implement color changing function
     * implement the different pages as per the mockups
 */
-
+import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
@@ -13,6 +13,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const canvasEl = document.querySelector('#canvas');
 const darkMode = document.querySelector('#darkMode');
+const rollMode = document.querySelector('#rollMode');
+const previewMode = document.querySelector('#previewMode');
 
 function toggleDarkMode() {
     console.log("toggleDarkMode")
@@ -23,33 +25,59 @@ function toggleDarkMode() {
 darkMode.onclick = function() {
     toggleDarkMode();
 }
+
 const loader = new GLTFLoader();
 let renderer, scene, camera, diceMesh, physicsWorld;
 let controls;
-// initialize the geometry and materials to make the "dice"
-let geometry = new THREE.BoxGeometry( 1, 1, 1 );
-let material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
-//let material2 = new THREE.MeshStandardMaterial( { color: 0x0000ff });
-//let cube = new THREE.Mesh( geometry, material );
-//let cube2 = new THREE.Mesh( geometry, material)
+// 0: Preview Mode
+// 1: Roll Mode
+let interactMode = 0;
+
+let params = {
+    numberOfDice: 2
+};
 
 const diceModel1 = new THREE.Object3D();
 const diceModel2 = new THREE.Object3D();
 
-initScene();
+function toggleRollMode() {
+    rollMode.disabled = true;
+    previewMode.disabled = false;
+    interactMode = 1;
+
+    scene.remove.apply(scene, scene.children);
+    // Reset the scene and rebuild it with physics?
+    initPhysics();
+    initScene(interactMode);
+}
+
+rollMode.onclick = function() {
+    toggleRollMode();
+}
+
+function togglePreviewMode() {
+    previewMode.disabled = true;
+    rollMode.disabled = false;
+    interactMode = 0;
+    scene.remove.apply(scene, scene.children);
+    initScene(interactMode);
+}
+
+previewMode.onclick = function() {
+    togglePreviewMode();
+}
+
+initScene(interactMode);
 
 window.addEventListener('resize', updateSceneSize);
 
-var onKeyDown = function(event) {
-    if (event.keyCode == 67) { // when 'c' is pressed
-      cube.material.color.setHex(0xff00ff); // there is also setHSV and setRGB
-      cube2.material.color.setHex(0xff00ff);
-    }
-  };
-  document.addEventListener('keydown', onKeyDown, false);
-
-function initScene() {
+function initScene(initMode) {
     scene = new THREE.Scene();
+
+    if (initMode == 1) {
+        console.log("Hey guys, I just tried to do something very silly!");
+        //return;
+    }
 
     renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -65,16 +93,20 @@ function initScene() {
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, .1, 1000)
     
-    controls = new TrackballControls( camera, renderer.domElement );
-    controls.rotateSpeed = 5;
+    if (initMode == 0) {
+        controls = new TrackballControls( camera, renderer.domElement );
+        controls.rotateSpeed = 5;
+    }
 
+    updateSceneSize();
+
+    // todo: Make if statement for roll mode
     loader.load(
         './js/dice_v5.gltf',
         function ( gltf ) {
-            //let model = gltf.scene;
-            //let model2 = gltf.scene;
-            //scene.add( model );
-            //scene.add( model2 );
+            gltf.scene.traverse(function (child) {
+                console.log(child);
+            })
             diceModel1.add(gltf.scene);
             diceModel2.add(gltf.scene.clone());
 
@@ -108,13 +140,6 @@ function initScene() {
     diceModel2.rotateZ(2.871);
     scene.add(diceModel2);
 
-    /*
-    scene.add(cube);
-    scene.add(cube2);
-    
-    cube2.translateX(1.5);
-    cube2.translateY(1);
-    */
     camera.position.z = 3;
     camera.position.x = 3;
     camera.position.y = 2;
@@ -129,7 +154,41 @@ function initScene() {
     topLight.shadow.mapSize.height = 2048;
     topLight.shadow.camera.near = 5;
     topLight.shadow.camera.far = 400;
-    scene.add(topLight);    
+    scene.add(topLight);
+
+    if (initMode == 1) {
+        createFloor();
+    }
+}
+
+function initPhysics() {
+    physicsWorld = new CANNON.World({
+        allowSleep: true,
+        gravity: new CANNON.Vec3(0, -50, 0)
+    })
+    physicsWorld.defaultContactMaterial.restitution = .3;
+}
+
+function createFloor() {
+    const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(1000, 1000),
+        new THREE.ShadowMaterial({
+            opacity: .1,
+        })
+    )
+    floor.receiveShadow = true;
+    floor.position.y = -7;
+    floor.quaternion.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), Math.PI * .5);
+    scene.add(floor);
+
+    const floorBody = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        shape: new CANNON.Plane(),
+        color: 0xff0000
+    });
+    floorBody.position.copy(floor.position);
+    floorBody.quaternion.copy(floor.quaternion);
+    physicsWorld.addBody(floorBody);
 }
 
 let animate = function() {
@@ -159,45 +218,3 @@ function updateSceneSize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
-
-// window.addEventListener('resize', updateSceneSize);
-
-// initScene();
-
-// function initScene() {
-//     renderer = new THREE.WebGLRenderer({
-//         alpha: true,
-//         antialias: true,
-//         canvas: canvasEl
-//     });
-
-//     renderer.shadowMap.enabled = true
-//     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-//     scene = new THREE.Scene();
-
-//     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, .1, 300)
-//     camera.position.set(0, .5, 4).multiplyScalar(7);
-
-//     scene.add(cube);
-
-//     render();
-// }
-
-// function updateSceneSize() {
-//     camera.aspect = window.innerWidth / window.innerHeight;
-//     camera.updateProjectionMatrix();
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-// }
-
-// function render() {
-//     //physicsWorld.fixedStep();
-
-//     // for (const dice of diceArray) {
-//     //     dice.mesh.position.copy(dice.body.position)
-//     //     dice.mesh.quaternion.copy(dice.body.quaternion)
-//     // }
-
-//     renderer.render(scene, camera);
-//     requestAnimationFrame(render);
-// }
